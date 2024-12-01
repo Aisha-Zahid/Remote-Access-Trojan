@@ -8,7 +8,7 @@ To Run the Server Side:
     run the server.py
 
 To Run the Client Side:
-install the following packages:
+install the following dependencies:
     Pillow
     comtypes
     pycaw

